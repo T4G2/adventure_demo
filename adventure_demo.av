@@ -1,0 +1,78 @@
+--- ADVENTURE FORMAT  [0.1] ---
+VARS:
+    gold: int = 50 @show_always  #comments in here
+
+
+---
+ITEMS:
+    KEY_ROOM_1
+    SWORD
+
+---
+SCENE:
+    id: first_door
+    name: first door
+    text:
+You entered a dark dungeon full of monsters,\n
+You heard some sound at the left, what will you do? 
+
+option:
+    text: Pick up sword on the ground
+    run:
+        add SWORD
+
+option:
+    text: You go to the sound
+    run:
+        if have sword; jump monster_killed
+        jump monster_killed_you # default option when all above if's do not worked
+
+---
+SCENE:
+    id: monster_killed
+    name: Monster Kill!!
+    run: increment gold 10
+    text:
+After long fight with monster, you killed it and recieved 10 golds
+  # Text ends here when there is a blank line (blank line in text create by using \n) 
+option:
+    text: Continue
+    run: 
+        end
+
+---
+SCENE:
+    id: monster_killed_you
+    name: You died by the hand of Monster
+    text:
+After short fight with monster you died!
+
+option:
+    text: Game Over
+    run:
+        end
+
+---
+
+!after las '---' you can add additional info without creating comments
+
+run commands:
+ jump <scene>;
+ end;
+
+increment <var> <count>;
+decrement <var> <count>;
+set <var> <count>;
+
+add <item>;
+remove <item>;
+
+ if <condition>; // if condition is alright, continue running line
+                   // otherwise jump to next line
+
+conditions:
+    have <item>
+    not_have <item>
+    <var> less_than <value>
+    <var> greater_than <value>
+    <var> equal <value>
