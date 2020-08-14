@@ -104,11 +104,40 @@ struct SceneOption {
     run: Vec<OptionCommand>
 }
 
+enum SceneInputType {
+    SIOneLine(String, String), // Name, rest
+    SIMultiLine(String, Vec<String>) // Name, rest
+}
+
 struct Scene {
     id: String,
     name: String,
     options: Vec<Vec<SceneOption>> // one vector for mutliple statement lines, second for commands itself
 }
+
+impl Scene {
+    fn new() -> Scene {
+        Scene {
+            id: String::from(""),
+            name: String::from(""),
+            options: Vec::<_>::new()
+        }
+    }
+
+    fn handle_scene_input(&self, input: SceneInputType) {
+        match input {
+            SceneInputType::SIOneLine(first, second) =>{
+                println!("SINGLE, {} : {}", first, second);
+            }
+
+            SceneInputType::SIMultiLine(first, second) =>{
+                println!("MULTI, {} : {:?}", first, second);
+            }
+        }
+    }
+}
+
+
 
 struct Adventure {
     version: String, 
@@ -118,6 +147,7 @@ struct Adventure {
     scenes: HashMap<String, Scene>,
     current_scene: Option<Scene>
 }
+
 
 fn trim_comment(line: String) -> String {
     /*
@@ -231,7 +261,46 @@ impl Adventure {
     }
 
     fn handle_scene_section(&self, section_lines : &Vec<String>, line_number: usize) {
+        let mut in_multiline = false; // if multiline starts with empty right side of ':' and ends with blank line
+        let mut multiline_buffer : Vec<String> = Vec::<_>::new();
+        let mut multiline_name: String = String::from("");
 
+        let mut scene: Scene = Scene::new();
+
+        for (line_offset, line) in section_lines.iter().enumerate() {
+            let line_trimmed = line.trim();
+
+            if in_multiline {
+                if line_trimmed == "" {
+                    in_multiline = false;
+                    scene.handle_scene_input(SceneInputType::SIMultiLine(multiline_name, multiline_buffer));
+                    multiline_buffer = Vec::<_>::new();
+                    multiline_name = String::from("");
+                }
+                else {
+                    multiline_buffer.push(String::from(line));
+                    continue;
+                }
+            }
+
+            else {
+                let line_split: Vec<&str> = line_trimmed.split(":").collect();
+                let line_split_len = line_split.len();
+
+                let first_parameter: String = String::from(line_split[0]);
+
+                if line_split_len == 1 {
+                    in_multiline = true;
+                    multiline_name = String::from(line_split[0]);
+                } else if line_split_len == 2 {
+                    scene.handle_scene_input(SceneInputType::SIOneLine(first_parameter, String::from(line_split[1])));
+                }
+                else {
+                    panic!("More than 2 chars '.' at line {}", line_number + line_offset);
+                }
+
+            }
+        }
     }
 
 
