@@ -67,15 +67,14 @@ increment <var> <count>;
 decrement <var> <count>;
 set <var> <count>;
 
-add <item>;
-remove <item>;
+add <item>; --
+remove <item>; --
 
  if <condition>; // if condition is alright, continue running line
                    // otherwise jump to next line
 
-conditions:
-    have <item>
+conditions: --
+    have <item> 
     not_have <item>
     <var> less_than <value>
-    <var> greater_than <value>
-    <var> equal <value>
+    <var> more_than <value>

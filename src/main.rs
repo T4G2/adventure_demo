@@ -7,6 +7,7 @@ trait Loadable {
     fn load(strings: Vec::<&String>) -> bool;
 }
 
+#[derive(Debug)]
 struct Item {
     id: String,
     count: i32,
@@ -21,12 +22,14 @@ impl Item {
     }
 }
 
+#[derive(Debug)]
 enum VarType {
     VTInteger(i32),
     VTBool(bool),
     VTString(String)
 }
 
+#[derive(Debug)]
 struct Var {
     id: String,
     var_type: VarType 
@@ -92,13 +95,68 @@ impl Var {
     }
 }
 
-struct OptionCommand {
+/*struct OptionCommand {
     keyword: String,
     argument_count: i32, // -1 -> non defined
     run_fn: fn(Vec<String>, &Adventure)
+}*/
+
+#[derive(Debug)]
+enum OptionCommand {
+    IfHave(String),  // IF
+    IfNotHave(String),
+    IfLessThan(String, i32),
+    IfMoreThan(String, i32),
+
+    Add(String), // ITEMS
+    Remove(String),
+
+    Increment(String, i32), // VARS
+    Decrement(String, i32),
+    Set(String, i32),
+
+    Jump(String),
+    End
 }
 
 
+fn parse_option_command(input: String) -> OptionCommand {
+    let input_split: Vec<&str> = input.trim().split(" ").collect();
+
+    match input_split[0] {
+        "if" => {
+            match input_split[1] {
+                "have" => OptionCommand::IfHave(input_split[2].to_string()),
+                "not_have" => OptionCommand::IfNotHave(input_split[2].to_string()),
+                _ => {
+                    match input_split[2] {
+                        "less_than" => OptionCommand::IfLessThan(input_split[1].to_string(),input_split[3].parse::<i32>().unwrap()),
+                        "more_than" => OptionCommand::IfMoreThan(input_split[1].to_string(),input_split[3].parse::<i32>().unwrap()),
+
+                        _ => panic!("There is no if statement type 2 with subcommand {}", input_split[2])
+                    }
+                }
+            }
+        }
+
+        "add" => OptionCommand::Add(input_split[1].to_string()),
+        "remove" => OptionCommand::Remove(input_split[1].to_string()),
+
+        "increment" => OptionCommand::Increment(input_split[1].to_string(), input_split[2].parse::<i32>().unwrap()),
+        "decrement" => OptionCommand::Decrement(input_split[1].to_string(), input_split[2].parse::<i32>().unwrap()),
+        "set" => OptionCommand::Set(input_split[1].to_string(), input_split[2].parse::<i32>().unwrap()),
+
+        "jump" => OptionCommand::Jump(input_split[1].to_string()),
+        "end" => OptionCommand::End,
+        
+        _ => panic!("there is no command {}", input_split[0])        
+    }
+
+
+
+}
+
+#[derive(Debug)]
 struct OptionCommandLine {
     commands: Vec<OptionCommand>
 }
@@ -109,16 +167,25 @@ impl OptionCommandLine {
             commands: Vec::<_>::new()
         }
     }
+    fn push_command(&mut self, command: OptionCommand) {
+            self.commands.push(command)
+    
+        }
+
     fn from(string :String) -> OptionCommandLine {
-        let mut line = OptionCommandLine::new();
+        let mut command_line = OptionCommandLine::new();
 
         let line_split: Vec<&str> = string.trim().split(";").collect();
-        println!("{:?}", line_split);
-        line
+        
+        for line in line_split.iter() {
+            command_line.push_command(parse_option_command(line.to_string()))
+        }
+        command_line
 
     }
 }
 
+#[derive(Debug)]
 struct OptionCommandBlock {
     lines : Vec<OptionCommandLine>
 }
@@ -140,6 +207,7 @@ impl OptionCommandBlock {
     }
 }
 
+#[derive(Debug)]
 struct SceneOption {
     id: usize,
     text: String,
@@ -158,11 +226,13 @@ impl SceneOption {
     }
 }
 
+#[derive(Debug)]
 enum SceneInputType {
     SIOneLine(String, String), // Name, rest
     SIMultiLine(String, Vec<String>) // Name, rest
 }
 
+#[derive(Debug)]
 struct Scene {
     id: String,
     name: String,
@@ -254,18 +324,23 @@ impl Scene {
 
         self.options.push(option);
     }
+
+
+
+    fn run(&self) {
+        println!("Shit..");
+    }
 }
 
 
-
+#[derive(Debug)]
 struct Adventure {
     version: String, 
 
     items: HashMap<String, Item>,
     vars: HashMap<String, Var>,
     scenes: HashMap<String, Scene>,
-    first_scene_id: String,
-    current_scene: Option<Scene>
+    current_scene_id: String
 }
 
 
@@ -285,9 +360,8 @@ impl Adventure {
             items: HashMap::new(),
             vars: HashMap::new(),
             scenes: HashMap::new(),
-            first_scene_id: String::from(""),
+            current_scene_id: String::from(""),
 
-            current_scene: None
         }
     }
 
@@ -430,9 +504,19 @@ impl Adventure {
         }
 
         // Set first scene id
-        if self.first_scene_id == "" {
-            self.first_scene_id = scene.id.clone();
+        if self.current_scene_id == "" {
+            self.current_scene_id = scene.id.clone();
         }
+
+        let id_coppied = scene.id.clone();
+        
+
+        self.scenes.insert(id_coppied, scene);
+    }
+
+
+    fn run(&mut self) {
+        self.scenes[&self.current_scene_id].run();
     }
 
 
@@ -445,6 +529,9 @@ fn main() -> std::io::Result<()> {
     let mut adventure = Adventure::new();
 
     adventure.load_from_file(&String::from("adventure_demo.av"))?;
+
+    //println!("{:?})", adventure);
+    adventure.run();
 
 
     Ok(())
