@@ -98,10 +98,64 @@ struct OptionCommand {
     run_fn: fn(Vec<String>, &Adventure)
 }
 
+
+struct OptionCommandLine {
+    commands: Vec<OptionCommand>
+}
+
+impl OptionCommandLine {
+    fn new() -> OptionCommandLine {
+        OptionCommandLine {
+            commands: Vec::<_>::new()
+        }
+    }
+    fn from(string :String) -> OptionCommandLine {
+        let mut line = OptionCommandLine::new();
+
+        let line_split: Vec<&str> = string.trim().split(";").collect();
+        println!("{:?}", line_split);
+        line
+
+    }
+}
+
+struct OptionCommandBlock {
+    lines : Vec<OptionCommandLine>
+}
+
+impl OptionCommandBlock {
+    fn new() -> OptionCommandBlock {
+        OptionCommandBlock{
+            lines: Vec::<_>::new()
+        }
+    }
+    fn from(lines :Vec<String>) -> OptionCommandBlock {
+        let mut block = OptionCommandBlock::new();
+
+        for line in lines {
+            block.lines.push(OptionCommandLine::from(line));
+        }
+
+        block
+    }
+}
+
 struct SceneOption {
-    id: String,
+    id: usize,
     text: String,
-    run: Vec<OptionCommand>
+    run: Option<OptionCommandBlock>
+}
+
+impl SceneOption {
+
+    fn from(id: usize) -> SceneOption {
+        SceneOption {
+            id,
+            text: String::from(""),
+            run: None
+        }
+
+    }
 }
 
 enum SceneInputType {
@@ -112,7 +166,9 @@ enum SceneInputType {
 struct Scene {
     id: String,
     name: String,
-    options: Vec<Vec<SceneOption>> // one vector for mutliple statement lines, second for commands itself
+    text: String,
+    run: Option<OptionCommandBlock>,
+    options: Vec<SceneOption> // one vector for mutliple statement lines, second for commands itself
 }
 
 impl Scene {
@@ -120,20 +176,83 @@ impl Scene {
         Scene {
             id: String::from(""),
             name: String::from(""),
+            text: String::from(""),
+            run: None,
             options: Vec::<_>::new()
         }
     }
 
-    fn handle_scene_input(&self, input: SceneInputType) {
+    fn handle_scene_input(&mut self, input: SceneInputType, line_number: usize) {
         match input {
             SceneInputType::SIOneLine(first, second) =>{
-                println!("SINGLE, {} : {}", first, second);
+                match &first[..] { // id, name
+                    "id" => self.id = second,
+                    "name" => self.name = second,
+                    _ => panic!("Unknown scene attribute {} at line {}", first, line_number)
+
+                }
             }
 
-            SceneInputType::SIMultiLine(first, second) =>{
-                println!("MULTI, {} : {:?}", first, second);
+            SceneInputType::SIMultiLine(first, second) => {
+
+                match &first[..] { // text, option, run
+                    "text" => {
+                        self.text = second.join("\n");
+
+                    }
+
+                    "run" => {
+                        self.run = Some(OptionCommandBlock::from(second));
+                    }
+
+                    "option" => {
+                        self.parse_option(second, line_number);
+                    }
+
+                    _ => panic!("Unknown scene attribute {} at line {}", first, line_number)
+                }
+
             }
         }
+    }
+
+    fn parse_option(&mut self,lines :Vec<String>, line_number: usize) {
+        // TODO ...
+
+        let mut option = SceneOption::from(self.options.len());
+        
+        let mut in_run = false;
+        let mut run_buffer = Vec::<String>::new();
+
+        for (line_offset, line) in lines.iter().enumerate() {
+            if in_run{
+                run_buffer.push(line.clone());
+                continue;
+            }
+
+            let mut line_split: Vec<&str> = line.trim().split(":").collect();
+            match line_split[0].trim() {
+                "text" => {
+                    option.text = String::from(line_split[1]);
+                }
+                "run" => {
+                    in_run = true;
+                    continue;
+                }
+
+                _ => panic!("Unknown option argument {} at line {}", line_split[0], line_number + line_offset)
+            }
+
+
+        }
+
+        if !in_run {
+            panic!("There is no run sequence in option at line {}", line_number);
+        }
+
+        option.run = Some(OptionCommandBlock::from(run_buffer));
+
+        self.options.push(option);
     }
 }
 
@@ -145,6 +264,7 @@ struct Adventure {
     items: HashMap<String, Item>,
     vars: HashMap<String, Var>,
     scenes: HashMap<String, Scene>,
+    first_scene_id: String,
     current_scene: Option<Scene>
 }
 
@@ -165,6 +285,7 @@ impl Adventure {
             items: HashMap::new(),
             vars: HashMap::new(),
             scenes: HashMap::new(),
+            first_scene_id: String::from(""),
 
             current_scene: None
         }
@@ -260,7 +381,7 @@ impl Adventure {
         }
     }
 
-    fn handle_scene_section(&self, section_lines : &Vec<String>, line_number: usize) {
+    fn handle_scene_section(&mut self, section_lines : &Vec<String>, line_number: usize) {
         let mut in_multiline = false; // if multiline starts with empty right side of ':' and ends with blank line
         let mut multiline_buffer : Vec<String> = Vec::<_>::new();
         let mut multiline_name: String = String::from("");
@@ -269,11 +390,14 @@ impl Adventure {
 
         for (line_offset, line) in section_lines.iter().enumerate() {
             let line_trimmed = line.trim();
+            if line_trimmed == "" && !in_multiline {
+                continue;
+            }
 
             if in_multiline {
                 if line_trimmed == "" {
                     in_multiline = false;
-                    scene.handle_scene_input(SceneInputType::SIMultiLine(multiline_name, multiline_buffer));
+                    scene.handle_scene_input(SceneInputType::SIMultiLine(multiline_name, multiline_buffer), line_number + line_offset);
                     multiline_buffer = Vec::<_>::new();
                     multiline_name = String::from("");
                 }
@@ -285,7 +409,10 @@ impl Adventure {
 
             else {
                 let line_split: Vec<&str> = line_trimmed.split(":").collect();
-                let line_split_len = line_split.len();
+                let mut line_split_len = line_split.len();
+                if line_split[1] == "" {
+                    line_split_len = 1;
+                }
 
                 let first_parameter: String = String::from(line_split[0]);
 
@@ -293,13 +420,18 @@ impl Adventure {
                     in_multiline = true;
                     multiline_name = String::from(line_split[0]);
                 } else if line_split_len == 2 {
-                    scene.handle_scene_input(SceneInputType::SIOneLine(first_parameter, String::from(line_split[1])));
+                    scene.handle_scene_input(SceneInputType::SIOneLine(first_parameter, String::from(line_split[1])), line_number + line_offset);
                 }
                 else {
                     panic!("More than 2 chars '.' at line {}", line_number + line_offset);
                 }
 
             }
+        }
+
+        // Set first scene id
+        if self.first_scene_id == "" {
+            self.first_scene_id = scene.id.clone();
         }
     }
 

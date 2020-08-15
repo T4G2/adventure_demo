@@ -13,7 +13,7 @@ SCENE:
     id: first_door
     name: first door
     text:
-You entered a dark dungeon full of monsters,\n
+You entered a dark dungeon full of monsters,
 You heard some sound at the left, what will you do? 
 
 option:
@@ -31,10 +31,13 @@ option:
 SCENE:
     id: monster_killed
     name: Monster Kill!!
-    run: increment gold 10
+    run:
+        increment gold 10
+
     text:
 After long fight with monster, you killed it and recieved 10 golds
   # Text ends here when there is a blank line (blank line in text create by using \n) 
+
 option:
     text: Continue
     run: 
@@ -57,8 +60,8 @@ option:
 !after las '---' you can add additional info without creating comments
 
 run commands:
- jump <scene>;
- end;
+ jump <scene>;  # Terminal -> will terminate sequence
+ end;           # Terminal
 
 increment <var> <count>;
 decrement <var> <count>;
