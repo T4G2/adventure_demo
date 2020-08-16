@@ -22,9 +22,9 @@ option:
         add SWORD
 
 option:
-    text: You go to the sound
+    text: You go chec0k out
     run:
-        if have sword; jump monster_killed
+        if have SWORD; jump monster_killed
         jump monster_killed_you # default option when all above if's do not worked
 
 ---
