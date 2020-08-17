@@ -230,7 +230,7 @@ impl OptionCommandBlock {
 
     fn run_fn(&self, adventure_data: &mut AdventureData) {
         for line in self.lines.iter(){
-            if !line.run_fn(adventure_data) {
+            if line.run_fn(adventure_data) {
                 break
             }
         }
@@ -441,7 +441,7 @@ impl AdventureData {
                     Some(var_obj) => match var_obj.var_type {
                         VarType::VTBool(_) => panic!("Cannot increment bool variable"),
                         VarType::VTString(_) => panic!("Cannit increment string variable"),
-                        VarType::VTInteger(integer) => return *value < integer
+                        VarType::VTInteger(integer) => return *value >= integer
                     }
                     None => panic!("Trying to reach unexisting item {}", var)
                 }
@@ -452,7 +452,7 @@ impl AdventureData {
                     Some(var_obj) => match var_obj.var_type {
                         VarType::VTBool(_) => panic!("Cannot increment bool variable"),
                         VarType::VTString(_) => panic!("Cannit increment string variable"),
-                        VarType::VTInteger(integer) => return *value > integer
+                        VarType::VTInteger(integer) => return *value <= integer
                     }
                     None => panic!("Trying to reach unexisting item {}", var)
                 }
@@ -464,7 +464,7 @@ impl AdventureData {
                     Some(item_obj) => item_obj.count += 1,
                     None => panic!("Trying to reach unexisting item {}", item)
                 }
-                false
+                true
             }
 
             OptionCommand::Remove(item) => {
@@ -472,7 +472,7 @@ impl AdventureData {
                     Some(item_obj) => item_obj.count = 1,
                     None => panic!("Trying to reach unexisting item {}", item)
                 }
-                false
+                true
             }
 
             OptionCommand::Increment(var, value) => {
@@ -484,7 +484,7 @@ impl AdventureData {
                     }
                     None => panic!("Trying to reach unexisting item {}", var)
                 }
-                false
+                true
             }
 
             OptionCommand::Decrement(var, value) => {
@@ -496,7 +496,7 @@ impl AdventureData {
                     }
                     None => panic!("Trying to reach unexisting item {}", var)
                 }
-                false
+                true
             }
 
             OptionCommand::Set(var, value) => {
@@ -508,17 +508,17 @@ impl AdventureData {
                     }
                     None => panic!("Trying to reach unexisting item {}", var)
                 }
-                false
+                true
             }
 
             OptionCommand::Jump(scene) => {
                 self.current_scene_id = scene.clone();
-                false
+                true
             }
 
             OptionCommand::End => {
                 self.current_scene_id = "ENDING".to_string();
-                false
+                true
             }
 
             
@@ -758,7 +758,7 @@ fn main() -> std::io::Result<()> {
 
     let mut adventure = Adventure::new();
     adventure.load_from_file(&in_file_name)?;
-    //println!("{:?})", adventure);
+    println!("{:?})", adventure);
 
     println!("
     Welcome in Adventure Engine,

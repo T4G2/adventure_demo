@@ -2,10 +2,9 @@
 VARS:
     gold: int = 50 @show_always  #comments in here
 
-
 ---
 ITEMS:
-    KEY_ROOM_1
+    MYSTERIOUS_KEY
     SWORD
 
 ---
@@ -22,26 +21,27 @@ option:
         add SWORD
 
 option:
-    text: You go chec0k out
+    text: You go check out
     run:
         if have SWORD; jump monster_killed
         jump monster_killed_you # default option when all above if's do not worked
 
+option:
+    text: Go trought the door
+    run: 
+        jump door_locked
+
 ---
 SCENE:
-    id: monster_killed
-    name: Monster Kill!!
-    run:
-        increment gold 10
-
+    id: door_locked
+    name: Door Locked
     text:
-After long fight with monster, you killed it and recieved 10 golds
-  # Text ends here when there is a blank line (blank line in text create by using \n) 
+Opps.. this door is locked and too strong to be break
 
 option:
-    text: Continue
-    run: 
-        end
+    text: Go Back
+    run:
+        jump first_door
 
 ---
 SCENE:
@@ -54,6 +54,172 @@ option:
     text: Game Over
     run:
         end
+
+---
+SCENE:
+    id: monster_killed
+    name: Monster Kill!!
+    run:
+        increment gold 10
+
+    text:
+After long fight with monster, you killed it and recieved 10 golds
+
+option:
+    text: Continue
+    run: 
+        jump out_of_cave
+
+---
+SCENE:
+    id: out_of_cave
+    name: Finally out of dungeon
+    text:
+You finaly got out of dungeon, but there was a mysterious locked door..
+You maybe should go back soon..
+
+option:
+    text: Follow the road
+    run:
+        jump forest_to_village
+
+---
+SCENE:
+    id: forest_to_village
+    name: Way to village from cave trought Forest
+    text:
+You go trought beautiful forest to the village
+
+option:
+    text: Continue
+    run:
+        jump village
+
+---
+SCENE:
+    id: village 
+    name: village
+    text:
+Now you landed in village, what should we do now?
+
+option:
+    text: Go to the shop
+    run:
+        jump shop
+
+option:
+    text: Go back to cave
+    run:
+        jump cave_again
+
+option:
+    text: Get some rest
+    run:
+        jump to_rest
+
+---
+SCENE:
+    id: shop
+    name: Shop
+    text:
+Welcome in Mercury's shop,
+    how can I help you?
+
+option:
+    text: Buy mysterious key (55 gold)
+    run: 
+        if gold more_than 55;jump bought_key
+        jump not_enought_money_key
+
+option:
+    text: Go back
+    run:
+        jump village
+
+---
+SCENE:
+    id:  bought_key
+    name: Key Bought!
+    run:
+        decrement gold 55; add MYSTERIOUS_KEY
+
+    text:
+You bought mysterious key, now do whatever you want with it!
+
+option:
+    text: Continue
+    run: 
+        jump shop
+
+---
+SCENE:
+    id: not_enought_money_key
+    name: Not enought money for the key
+    text: 
+You have not enought money to buy this key.
+
+option:
+    text: Continue
+    run:
+        jump shop
+
+
+---
+SCENE:
+    id: cave_again
+    name: Cave
+    text:
+Welcome in cave again!
+    What should you do?
+
+option:
+    text: Go trought the door
+    run:
+        if have MYSTERIOUS_KEY; jump other_side
+        jump no_key_2
+
+option:
+    text: Go back to village
+    run:
+        jump village
+
+---
+SCENE:
+    id: other_side 
+    name: Welcome on other side
+    text:
+Well here we end because you just woke up.. 
+    Sorry...
+
+option: 
+    text: Oh **** i'm late to work!!
+    run:
+        end
+
+---
+SCENE:
+    id: no_key_2
+    name: No Key...
+    text:
+Well door still can't be open wothout key...
+
+option:
+    text: Go back
+    run:
+        jump cave_again
+
+---
+SCENE:
+    id:  to_rest
+    name: Rest.. btu why?
+    text:
+You rested a little bit 
+    but nobody give's a *** 
+
+option:
+    text: Go back to village
+    run:
+    jump village
 
 ---
 
