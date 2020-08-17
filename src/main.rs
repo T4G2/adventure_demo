@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::BufRead;
 use std::io::BufReader;
+use std::env;
 
 
 const CLR: &str = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
@@ -746,11 +747,31 @@ impl Adventure {
 }
 
 fn main() -> std::io::Result<()> {
+
+    let arguments : Vec<String> = env::args().collect();
+
+    if arguments.len() != 2 {
+        panic!("ERR: Bad argument count ({} instread of 1)", arguments.len() - 1);
+        
+    }
+    let in_file_name: String = arguments[1].clone();
+
     let mut adventure = Adventure::new();
-
-    adventure.load_from_file(&String::from("adventure_demo.av"))?;
-
+    adventure.load_from_file(&in_file_name)?;
     //println!("{:?})", adventure);
+
+    println!("
+    Welcome in Adventure Engine,
+    you can open inventory by pressing i, or choose one of options by printing it's number
+    Have a good game
+
+    (Continue by Enter)
+    ");
+
+    let mut buffer = String::from("");
+
+    std::io::stdin().read_line(&mut buffer).expect("Strange error...");
+
     while &adventure.data.current_scene_id != "ENDING"{
         adventure.run_scene();
     }
